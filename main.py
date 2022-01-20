@@ -58,7 +58,7 @@ for page_num in range(1, max_pages + 1):
 items = list(set(items))
 print(f'total: {len(items)}')
 
-good = list(filter(lambda item: item.price <= GOOD_THRESHOLD and item.time <= QUERY_FREQ_MINUTES, items))
+good = list(filter(lambda item: item.price <= GOOD_THRESHOLD and item.time * 60 <= QUERY_FREQ_MINUTES, items))
 good = sorted(good, key=lambda x: (x.time, x.price))
 print(f'good: {len(good)}')
 
