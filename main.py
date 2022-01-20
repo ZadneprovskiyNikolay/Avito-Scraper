@@ -8,7 +8,7 @@ from requests import get
 
 from item import Item
 from headers import headers
-from settings import ITEM_NAME, GOOD_THRESHOLD, QUERY_FREQ_MINUTES, WEBSITE, CACHE_SIZE
+from settings import ITEM_NAME, GOOD_THRESHOLD, QUERY_FREQ_MINUTES, WEBSITE
 
 
 item_name_encoded = requests.utils.quote(ITEM_NAME)
