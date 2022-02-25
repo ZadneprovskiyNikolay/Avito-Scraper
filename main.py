@@ -1,4 +1,5 @@
 # %%
+
 from time import sleep
 
 import requests
@@ -10,6 +11,10 @@ from item import Item
 from headers import headers
 from settings import ITEM_NAME, GOOD_THRESHOLD, QUERY_FREQ_MINUTES, WEBSITE
 
+def good_item(item):
+    return ITEM_NAME.lower() in item.title.lower() and \
+        item.price <= GOOD_THRESHOLD and \
+            item.time * 60 <= QUERY_FREQ_MINUTES
 
 item_name_encoded = requests.utils.quote(ITEM_NAME)
 
@@ -20,14 +25,18 @@ max_pages = 1
 for page_num in range(1, max_pages + 1):
 
     res = get(
-        f'https://www.avito.ru/sankt-peterburg/telefony/mobilnye_telefony/apple-ASgBAgICAkS0wA3OqzmwwQ2I_Dc?cd=1&p={page_num}&q={item_name_encoded}&s=104',
+        f'https://www.avito.ru/sankt-peterburg?bt={page_num}&q={ITEM_NAME}',
         headers=headers
     )
 
     soup = BeautifulSoup(res.text)
 
-
     tree_items = soup.find_all('div', {'data-marker': 'item'})
+    if not tree_items:
+        print(f'page {page_num} aborting, response: {soup}')
+        print()
+        break
+
     page_items = []
 
     for item in tree_items:
@@ -41,35 +50,22 @@ for page_num in range(1, max_pages + 1):
             continue
         
         page_items.append(Item(title=title, href=href, price=price, date_str=date))
+        print(page_items)
 
-    # Отсеиваю неподходящие
-    page_items = list(filter(lambda item: (ITEM_NAME in item.title), page_items))
+        # Отсеиваю неподходящие
+        page_items = list(filter(good_item, page_items))
 
-    if not page_items:
-        print(f'page {page_num} aborting, response: {soup}')
-        print()
-        break
+        items.extend(page_items)
 
-    items.extend(page_items)
+        # print(f'page {page_num}: {len(page_items)} items ({len(items)} total)')
 
-    print(f'page {page_num}: {len(page_items)} items ({len(items)} total)')
-
-# %%
 items = list(set(items))
-print(f'total: {len(items)}')
+items = sorted(items, key=lambda x: (x.time, x.price))
 
-good = list(filter(lambda item: item.price <= GOOD_THRESHOLD and item.time * 60 <= QUERY_FREQ_MINUTES, items))
-good = sorted(good, key=lambda x: (x.time, x.price))
-print(f'good: {len(good)}')
-
-print(len(good))    
-
-for item in good:
-        # Push item.
-        urllib.request.urlopen(f'http://pushmebot.ru/send?key=c74bd2b6021a3f352e5c08762fb53b1e&message={item.href}')
-
-# %%
-
+for item in items:
+    # Push item.
+    print(item.time * 60)
+    urllib.request.urlopen(f'http://pushmebot.ru/send?key=c74bd2b6021a3f352e5c08762fb53b1e&message={item.href}')
 
 
 
